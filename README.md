@@ -109,7 +109,7 @@ services:
       - dnstt-keys:/etc/dnstt
     environment:
       - DNSTT_DOMAIN=t.example.com
-      - DNSTT_FORWARD_ADDR=ssh-server:22
+      - DNSTT_FORWARD_ADDR=ssh-server:2222
       - DNSTT_MTU=1232
     depends_on:
       - ssh-server

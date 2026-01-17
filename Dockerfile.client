@@ -1,0 +1,41 @@
+# Build stage - compile dnstt-client from official source
+FROM golang:1.22-alpine AS builder
+
+RUN apk add --no-cache git
+
+WORKDIR /build
+
+# Clone official dnstt source
+RUN git clone https://www.bamsoftware.com/git/dnstt.git
+
+# Build dnstt-client
+WORKDIR /build/dnstt/dnstt-client
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /dnstt-client .
+
+# Runtime stage - minimal image
+FROM debian:stable-slim
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -r -s /bin/false -d /nonexistent dnstt
+
+# Copy binary and entrypoint
+COPY --from=builder /dnstt-client /usr/local/bin/dnstt-client
+COPY entrypoint-client.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Environment variables with defaults
+ENV DNSTT_DOMAIN="" \
+    DNSTT_PUBKEY="" \
+    DNSTT_DOH_URL="" \
+    DNSTT_DOT_ADDR="" \
+    DNSTT_UDP_ADDR="" \
+    DNSTT_LISTEN_ADDR="127.0.0.1:7000"
+
+EXPOSE 7000
+
+ENTRYPOINT ["/entrypoint.sh"]

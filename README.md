@@ -156,13 +156,12 @@ For automated connections with auto-reconnect, use key-based auth with `jnovack/
 
 **Server** - change to key-based auth:
 ```yaml
-ssh-server:
-  image: linuxserver/openssh-server
-  environment:
-    - PASSWORD_ACCESS=false
-    - USER_NAME=tunnel
-  volumes:
-    - ./authorized_keys:/config/.ssh/authorized_keys:ro
+  ssh-server:
+    image: linuxserver/openssh-server
+    environment:
+      - PASSWORD_ACCESS=false
+      - USER_NAME=tunnel
+      - PUBLIC_KEY=your-ssh-pubkey-here
 ```
 
 **Client** - use autossh for reliable reconnection:
@@ -173,9 +172,10 @@ services:
     restart: unless-stopped
     environment:
       - DNSTT_DOMAIN=t.example.com
-      - DNSTT_PUBKEY=0000000000000000000000000000000000000000000000000000000000000000
+      - DNSTT_PUBKEY=your-dnstt-pubkey-here
       - DNSTT_DOH_URL=https://cloudflare-dns.com/dns-query
       - DNSTT_LISTEN_ADDR=0.0.0.0:7000
+      - DNSTT_UDP_ADDR=1.1.1.1:53
 
   ssh-tunnel:
     image: jnovack/autossh
@@ -185,11 +185,13 @@ services:
     ports:
       - "1080:1080"
     environment:
-      - SSH_HOSTUSER=tunnel
-      - SSH_HOSTNAME=dnstt-client
-      - SSH_HOSTPORT=7000
-      - SSH_MODE=-D 0.0.0.0:1080
+      - SSH_REMOTE_USER=tunnel
+      - SSH_REMOTE_HOST=dnstt-client
+      - SSH_REMOTE_PORT=7000
+      - SSH_KEY_FILE=/id_rsa
+      - SSH_MODE=-L
       - AUTOSSH_GATETIME=0
+      - SSH_OPTIONS=-l tunnel -D 0.0.0.0:1080 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
     volumes:
       - ./id_rsa:/id_rsa:ro
 ```

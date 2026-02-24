@@ -16,7 +16,7 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /dnstt-client .
 FROM debian:stable-slim
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates && \
+    apt-get install -y --no-install-recommends ca-certificates curl dnsutils netcat-openbsd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -37,5 +37,8 @@ ENV DNSTT_DOMAIN="" \
     DNSTT_LISTEN_ADDR="127.0.0.1:7000"
 
 EXPOSE 7000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD nc -z 127.0.0.1 ${DNSTT_LISTEN_ADDR##*:} || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]

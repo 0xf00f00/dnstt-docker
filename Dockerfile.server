@@ -16,7 +16,7 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /dnstt-server .
 FROM debian:stable-slim
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates && \
+    apt-get install -y --no-install-recommends ca-certificates curl dnsutils netcat-openbsd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -38,6 +38,9 @@ ENV DNSTT_DOMAIN="" \
     DNSTT_LISTEN_PORT="5300"
 
 EXPOSE 5300/udp
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD nc -z -u 127.0.0.1 $DNSTT_LISTEN_PORT || exit 1
 
 VOLUME /etc/dnstt
 
